@@ -82,19 +82,19 @@ jobs:
       if: needs.test-config.outputs.test-mode == 'quick'
       run: |
         cd pocket-cm
-        pytest tests/test_pydantic_validation.py -v --tb=short
+        PYTHONPATH=. pytest tests/test_pydantic_validation.py -v --tb=short
 
     - name: Run Fast Tests
       if: needs.test-config.outputs.test-mode == 'fast'
       run: |
         cd pocket-cm
-        pytest tests/test_pydantic_validation.py tests/test_security.py -v --tb=short
+        PYTHONPATH=. pytest tests/test_pydantic_validation.py tests/test_security.py -v --tb=short
 
     - name: Run Full Tests with Coverage
       if: needs.test-config.outputs.test-mode == 'full'
       run: |
         cd pocket-cm
-        pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing
+        PYTHONPATH=. pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing
 
     # Linting (run for all modes except quick)
     - name: Run Linting
