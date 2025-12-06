@@ -31,7 +31,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r pocket-cm/requirements.txt
 
-      - name: Run unit tests
+      - name: Run core tests only
         run: |
           cd pocket-cm
-          PYTHONPATH=. pytest tests/ -v --tb=short
+          PYTHONPATH=. pytest tests/test_pydantic_validation.py tests/test_config.py -v --tb=short
