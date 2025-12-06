@@ -3,9 +3,9 @@ name: Unit Tests
 
 on:
   push:
-    branches: [main, develop, '*', feature/*]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 jobs:
   test:
@@ -22,16 +22,15 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('pocket-cm/**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libmagic1 libmagic-dev
           python -m pip install --upgrade pip
-          pip install -r pocket-cm/requirements.txt
+          pip install -r requirements.txt
 
-      - name: Run core tests only
+      - name: Run unit tests
         run: |
-          cd pocket-cm
           PYTHONPATH=. pytest tests/test_pydantic_validation.py tests/test_config.py -v --tb=short
