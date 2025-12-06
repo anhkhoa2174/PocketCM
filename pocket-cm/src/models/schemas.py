@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict, field_serializer
 from enum import Enum
 from datetime import date, datetime
 from typing import Optional, Any
@@ -12,10 +12,20 @@ class SubscriptionTier(str, Enum):
 
 
 class CustomerRecord(BaseModel):
+    model_config = ConfigDict(
+        json_encoders={
+            date: lambda v: v.isoformat()
+        }
+    )
+
     customer_name: str = Field(..., min_length=1, max_length=255)
     email: str
     subscription_tier: SubscriptionTier
     signup_date: date
+
+    @field_serializer('signup_date')
+    def serialize_signup_date(self, value: date) -> str:
+        return value.isoformat()
 
     @field_validator('email')
     @classmethod
@@ -76,6 +86,7 @@ class CustomerRecord(BaseModel):
                 '%d %b %Y',    # 1 Jan 2024
                 '%Y/%m/%d',    # 2024/01/01
                 '%d-%m-%Y',    # 01-01-2024
+                '%m-%d-%Y',    # 01-01-2024 (MM-DD-YYYY)
             ]
 
             for fmt in date_formats:
@@ -105,11 +116,7 @@ class CustomerRecord(BaseModel):
                 raise ValueError(f'Missing required fields: {missing_fields}')
         return data
 
-    class Config:
-        json_encoders = {
-            date: lambda v: v.isoformat()
-        }
-
+    
 
 class FileUploadResponse(BaseModel):
     success: bool
