@@ -5,6 +5,7 @@ from docx import Document
 from typing import List, Dict, Any, Optional
 import openai
 import instructor
+from openai import OpenAI
 from pathlib import Path
 import io
 import logging
@@ -19,7 +20,7 @@ class DataExtractionService:
     def __init__(self):
         # Initialize OpenAI client with instructor for structured output
         if settings.openai_api_key:
-            self.client = instructor.from_openai(openai.OpenAI(api_key=settings.openai_api_key))
+            self.client = instructor.from_openai(OpenAI(api_key=settings.openai_api_key))
         else:
             self.client = None
             logger.warning("OpenAI API key not configured. AI extraction will be limited.")

@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-3.5-turbo"
 
     # External API Settings
-    destination_api_url: str = "https://webhook.site/your-webhook-url"
+    destination_api_url: str = "https://webhook.site/9c3470f6-14e9-4ae2-beb7-6d2ecfb7ee55"
     max_retries: int = 3
     retry_delay: float = 1.0
 
