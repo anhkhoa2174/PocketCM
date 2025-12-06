@@ -2,13 +2,13 @@
 
 ## Overview
 
-This repository uses GitHub Actions to automate testing, linting, and deployment processes. The workflows are designed to provide fast feedback on pull requests while ensuring comprehensive testing on the main branch.
+This repository uses GitHub Actions to automate testing, linting, and deployment processes. The workflows are optimized for fast feedback on pull requests while ensuring comprehensive testing on main branches.
 
 ## Workflows
 
 ### 1. CI Pipeline (`ci.yml`)
 
-**Primary workflow for continuous integration**
+**Smart unified CI/CD pipeline with conditional execution**
 
 **Triggers:**
 - Push to `main`, `develop`, `feature/*` branches
@@ -17,180 +17,176 @@ This repository uses GitHub Actions to automate testing, linting, and deployment
 
 **Jobs:**
 
-#### `full-test` (Main/Develop branches only)
-- **Purpose:** Complete test suite with full coverage
-- **When:** Main/develop branches or scheduled runs
-- **Includes:**
-  - Full pytest test suite with coverage reporting
-  - Code linting with ruff
+#### `test-config`
+- **Purpose:** Determine optimal test strategy based on branch/context
+- **Outputs:** `test-mode`, `run-security`, `run-docker`, `cache-key`
+- **Logic:**
+  - Main branch: `full` mode + security + docker
+  - Develop branch: `full` mode only
+  - Pull requests: `fast` mode
+  - Feature branches: `quick` mode
+
+#### `test` (Conditional execution)
+- **Quick Mode** (~15 seconds):
+  - Critical Pydantic validation tests only
+  - No linting (maximum speed)
+
+- **Fast Mode** (~30 seconds):
+  - Critical tests (Pydantic + Security)
+  - Fast linting on src/ only
+
+- **Full Mode** (~3-5 minutes):
+  - Complete test suite with coverage reporting
+  - Full linting (src/ + tests/)
   - Type checking with mypy
   - Coverage upload to Codecov
-
-#### `fast-test` (PRs & Feature branches)
-- **Purpose:** Quick feedback for pull requests
-- **When:** Pull requests or non-main/develop branches
-- **Includes:**
-  - Critical tests only (Pydantic validation, Security)
-  - Fast linting with ruff
-  - ~30 seconds execution time
+  - HTML coverage artifacts
 
 #### `security` (Main branch only)
 - **Purpose:** Security vulnerability scanning
-- **When:** Main branch only
-- **Includes:**
-  - Safety dependency check
-  - Bandit security linter
+- **Tools:** Safety (dependencies) + Bandit (code analysis)
+- **Output:** JSON reports for security monitoring
 
 #### `docker-test` (Main branch only)
 - **Purpose:** Docker image validation
-- **When:** Main branch only, after full-test passes
-- **Includes:**
-  - Docker build
-  - Container health check
-  - API endpoint validation
+- **Steps:** Build → Health check → API endpoint validation
+- **Caching:** GitHub Actions cache for Docker layers
 
-### 2. Unit Tests (`test.yml`)
+### 2. Release Pipeline (`release.yml`)
 
-**Dedicated unit testing workflow**
+**Automated deployment on GitHub releases**
 
 **Triggers:**
-- Push to any branch
-- Pull requests to any branch
+- Release publication event
 
 **Features:**
-- Runs tests on Python 3.11
-- Coverage reporting to Codecov
-- Artifact upload for HTML reports
-- Parallel execution with matrix strategy
-
-### 3. Quick Tests (`quick-test.yml`)
-
-**Ultra-fast testing for feature branches**
-
-**Triggers:**
-- Push to non-main branches
-- (Not triggered on pull requests to avoid duplication with ci.yml)
-
-**Features:**
-- Only runs critical tests
-- Minimal dependencies installation
-- ~15 seconds execution time
+- Docker Hub authentication
+- Multi-tagging strategy (branch, PR, semver)
+- Optimized build caching
+- Production-ready image publishing
 
 ## Branch Strategy
 
 ### `main` Branch
-- ✅ **Full test suite** with all checks
-- ✅ **Security scanning**
-- ✅ **Docker validation**
-- ✅ **Coverage reporting**
-- ✅ **Deployment ready**
+- ✅ **Full test suite** with comprehensive checks
+- ✅ **Security scanning** for vulnerabilities
+- ✅ **Docker validation** with health checks
+- ✅ **Coverage reporting** to Codecov
+- ✅ **Release ready** for production
 
 ### `develop` Branch
 - ✅ **Full test suite** with all checks
-- ❌ No security scan (skip for faster iteration)
-- ❌ No Docker test (skip for faster iteration)
-- ✅ **Coverage reporting**
+- ❌ No security scan (faster iteration)
+- ❌ No Docker test (faster iteration)
+- ✅ **Coverage reporting** for tracking
 
 ### `feature/*` Branches
-- ❌ **Fast tests only** (critical path validation)
+- ⚡ **Quick tests only** (15 seconds)
+- ✅ Critical path validation
 - ❌ No security scan
 - ❌ No Docker test
-- ❌ Limited coverage (speed optimization)
-- ⚡ **Fast feedback** (~30 seconds)
+- ❌ No coverage reporting (speed optimization)
 
 ### Pull Requests
-- ✅ **Fast tests** for quick validation
-- ✅ **Full context** from target branch
-- ✅ **Automated merges** when checks pass
+- ⚡ **Fast tests** (30 seconds) for quick validation
+- ✅ **Smart caching** based on test mode
+- ✅ **Automated merges** when all checks pass
 
-## Caching Strategy
+## Performance Optimizations
 
-### Dependency Caching
-- Uses `actions/cache@v3` for pip packages
-- Separate cache keys for different job types
-- Fast cache invalidation on dependency changes
+### Smart Caching
+- **Mode-based cache keys:** Different caches for quick/fast/full modes
+- **Dependency-based invalidation:** Fast cache refresh on requirement changes
+- **Docker layer caching:** Optimized for frequent builds
 
-### Build Caching
-- Docker layer caching with GitHub Actions cache
-- Optimized for frequent CI runs
+### Execution Times
+- **Feature branches:** ~15 seconds (quick mode)
+- **Pull requests:** ~30 seconds (fast mode)
+- **Main/Develop:** ~3-5 minutes (full mode)
 
-## Coverage Reporting
+### Resource Efficiency
+- **Conditional job execution:** Only run what's needed
+- **Parallel job execution:** Security and Docker tests run in parallel
+- **Matrix strategy:** Python version testing when needed
 
-### Codecov Integration
-- Coverage reports uploaded to Codecov for main branches
-- Historical coverage tracking
-- PR coverage comments
-- Coverage badges in README
+## Monitoring & Observability
 
-### Artifacts
-- HTML coverage reports saved as artifacts
-- Available for download from GitHub Actions UI
-- Retained for 30 days
+### Coverage Tracking
+- **Codecov integration:** Historical coverage tracking
+- **PR comments:** Coverage diff visualization
+- **Artifacts:** HTML reports available for download
 
-## Performance Optimization
+### Status Badges
+- CI pipeline status
+- Test coverage percentage
+- Build health indicators
 
-### Fast Feedback Loop
-- **Feature branches:** ~30 seconds
-- **Pull requests:** ~1 minute
-- **Main branch:** ~3-5 minutes (full suite)
+### Security Monitoring
+- **Dependency vulnerability scanning** with Safety
+- **Static code analysis** with Bandit
+- **JSON report outputs** for integration
 
-### Resource Usage
-- Parallel job execution where applicable
-- Smart caching reduces redundant work
-- Conditional job execution based on branch
-
-## Monitoring
-
-### Status Indicators
-- GitHub Actions status badges
-- Test coverage badges
-- Build status in PR comments
-
-### Notifications
-- Automatic status updates on pull requests
-- Failure notifications with detailed logs
-- Success confirmations for completed pipelines
-
-## Troubleshooting
+## Troubleshooting Guide
 
 ### Common Issues
 
-1. **Cache Misses**
-   - Invalidated on dependency changes
-   - Automatic regeneration on next run
+1. **Cache Invalidation**
+   ```bash
+   # Clear cache by changing requirements.txt version
+   # Or manually invalidate in GitHub Actions settings
+   ```
 
-2. **Test Failures**
-   - Detailed logs in GitHub Actions UI
-   - Local reproduction using same command
+2. **Test Timeouts**
+   - Quick mode: 15 second timeout
+   - Fast mode: 30 second timeout
+   - Full mode: 5 minute timeout
 
-3. **Timeouts**
-   - Fast-test mode for quick iterations
-   - Adjustable timeouts in workflow files
+3. **Docker Build Failures**
+   ```bash
+   # Test locally before push
+   docker build -t pocket-cm:test .
+   docker run -p 8000:8000 pocket-cm:test
+   ```
 
-### Debugging
+### Local Development Commands
 ```bash
-# Run tests locally like CI
-pytest tests/ -v --cov=src
+# Run tests like CI
+pytest tests/ -v --cov=src                    # Full mode
+pytest tests/test_pydantic_validation.py -v   # Quick mode
+pytest tests/test_pydantic_validation.py tests/test_security.py -v  # Fast mode
 
-# Run specific test files
-pytest tests/test_pydantic_validation.py -v
+# Linting
+ruff check src/                    # Fast mode
+ruff check src/ tests/             # Full mode
 
-# Check linting
-ruff check src/
+# Type checking
+mypy src/ --ignore-missing-imports
 ```
 
 ## Best Practices
 
-1. **Commit Messages:** Follow conventional commit format
-2. **Branch Naming:** Use descriptive feature branch names
-3. **Pull Requests:** Keep PRs focused and well-tested
-4. **Dependencies:** Update requirements.txt pin versions
-5. **Tests:** Write tests for new features and bug fixes
+1. **Feature Development:** Use descriptive feature branch names
+2. **Pull Requests:** Keep PRs focused with clear descriptions
+3. **Testing:** Write tests for new features and edge cases
+4. **Dependencies:** Pin versions in requirements.txt
+5. **Commits:** Use conventional commit format for automated changelogs
 
-## Future Enhancements
+## Configuration Details
+
+### Environment Variables
+- `DOCKER_USERNAME`: Docker Hub credentials
+- `DOCKER_PASSWORD`: Docker Hub access token
+- `CODECOV_TOKEN`: Coverage reporting (optional)
+
+### Workflow Permissions
+- `contents: read`: Repository access
+- `packages: write`: Docker registry access
+
+## Future Roadmap
 
 - [ ] Integration tests with test database
 - [ ] Performance regression testing
-- [ ] Multi-environment testing (staging/production)
-- [ ] Automated deployment on successful main branch builds
-- [ ] Slack/Discord notifications for CI/CD events
+- [ ] Multi-environment deployments (staging/production)
+- [ ] Slack/Discord notifications for CI events
+- [ ] Automated semantic versioning
+- [ ] Security vulnerability auto-remediation
