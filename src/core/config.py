@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     allowed_mime_types: list[str] = [
         "application/csv",
         "text/csv",
+        "text/plain",  # csv files sometimes detected as plain text
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/pdf",

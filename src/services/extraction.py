@@ -9,6 +9,8 @@ from openai import OpenAI
 from pathlib import Path
 import io
 import logging
+import re
+import csv
 
 from ..models.schemas import CustomerRecord
 from ..core.config import settings
@@ -51,10 +53,37 @@ class DataExtractionService:
     async def _extract_from_csv(self, file_content: bytes) -> List[CustomerRecord]:
         """Extract data from CSV files"""
         try:
-            df = pd.read_csv(io.BytesIO(file_content))
-            return self._dataframe_to_records(df)
+            df = pd.read_csv(
+                io.BytesIO(file_content),
+                skipinitialspace=True,
+                engine="python",  # more forgiving with messy spacing/quotes
+            )
+            records = self._dataframe_to_records(df)
+            if records:
+                return records
+
+            # Fallback: regex over raw text if structured parse yielded nothing
+            text = file_content.decode("utf-8", errors="ignore")
+            return self._extract_from_text_with_regex(text)
         except Exception as e:
-            raise ValueError(f"Failed to parse CSV: {str(e)}")
+            # Try sniffing delimiter and retry once before giving up
+            try:
+                text = file_content.decode("utf-8", errors="ignore")
+                import csv
+
+                dialect = csv.Sniffer().sniff(text.splitlines()[0])
+                df = pd.read_csv(
+                    io.BytesIO(file_content),
+                    skipinitialspace=True,
+                    engine="python",
+                    delimiter=dialect.delimiter,
+                )
+                records = self._dataframe_to_records(df)
+                if records:
+                    return records
+                return self._extract_from_text_with_regex(text)
+            except Exception:
+                raise ValueError(f"Failed to parse CSV: {str(e)}")
 
     async def _extract_from_excel(self, file_content: bytes) -> List[CustomerRecord]:
         """Extract data from Excel files"""
@@ -221,11 +250,17 @@ class DataExtractionService:
             'signup_date': ['date', 'signup_date', 'join_date', 'created', 'registration_date']
         }
 
+        def normalize(col_name: str) -> str:
+            return re.sub(r'[^a-z0-9]+', '', col_name.strip().lower())
+
+        normalized_columns = {col: normalize(col) for col in df.columns}
+
         # Find actual column names
         actual_columns = {}
         for field, possible_names in column_mapping.items():
-            for col in df.columns:
-                if col.lower() in [name.lower() for name in possible_names]:
+            normalized_targets = {normalize(name) for name in possible_names}
+            for col, norm in normalized_columns.items():
+                if norm in normalized_targets:
                     actual_columns[field] = col
                     break
 

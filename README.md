@@ -31,5 +31,5 @@ FastAPI microservice that ingests customer data files (CSV, XLSX, PDF, DOCX, JSO
 - `pytest` with coverage; unit tests focus on Pydantic validators (email, tier normalization, date parsing) and regex extraction fallback behavior.
 
 ## Notes
-- Some parts were drafted with AI assistance: docker-compose, Dockerfile, pyproject, Makefile, the MIME/magic-number security checks, the rate-limiting middleware setup, and CORS configuration.
+- Some parts were drafted with AI assistance: docker-compose, Dockerfile, pyproject, Makefile, the MIME/magic-number security checks (including CSV `text/plain` allowance), the rate-limiting middleware setup, and CORS configuration.
 - Unit tests were also drafted with AI assistance.

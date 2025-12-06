@@ -10,6 +10,7 @@ class FileSecurityValidator:
     # MIME type to extension mapping
     MIME_TYPE_MAP = {
         'text/csv': ['.csv'],
+        'text/plain': ['.csv'],
         'application/csv': ['.csv'],
         'application/vnd.ms-excel': ['.xls'],
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],

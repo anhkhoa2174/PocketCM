@@ -84,9 +84,13 @@ class CustomerRecord(BaseModel):
                 '%B %d, %Y',   # January 1, 2024
                 '%b %d, %Y',   # Jan 1, 2024
                 '%d %b %Y',    # 1 Jan 2024
+                '%d %b %y',    # 1 Jan 24
+                '%b %d %y',    # Jan 1 24
                 '%Y/%m/%d',    # 2024/01/01
                 '%d-%m-%Y',    # 01-01-2024
                 '%m-%d-%Y',    # 01-01-2024 (MM-DD-YYYY)
+                '%Y.%m.%d',    # 2024.02.01
+                '%d.%m.%Y',    # 01.02.2024
             ]
 
             for fmt in date_formats:
