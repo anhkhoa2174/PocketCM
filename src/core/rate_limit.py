@@ -1,6 +1,7 @@
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from fastapi import Request, HTTPException, status
 from typing import Dict
 import time
@@ -23,6 +24,9 @@ def setup_rate_limits(app):
     """
     Setup rate limiting for the FastAPI application
     """
+    # Enable middleware so @limiter.limit actually blocks requests
+    app.add_middleware(SlowAPIMiddleware)
+
     # Add rate limit error handler
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.state.limiter = limiter

@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     libmagic1 \
     libmagic-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -21,6 +22,9 @@ COPY pyproject.toml .
 
 # Create uploads directory
 RUN mkdir -p uploads
+
+# Ensure local code is importable when running tests/uvicorn in container
+ENV PYTHONPATH="/app"
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app

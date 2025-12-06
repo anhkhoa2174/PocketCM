@@ -88,10 +88,10 @@ class DataExtractionService:
 
     async def _extract_from_pdf(self, file_content: bytes) -> List[CustomerRecord]:
         """Extract data from PDF files using AI"""
+        text_content = ""
         try:
             # Extract text from PDF
             with pdfplumber.open(io.BytesIO(file_content)) as pdf:
-                text_content = ""
                 for page in pdf.pages:
                     page_text = page.extract_text()
                     if page_text:
@@ -102,16 +102,14 @@ class DataExtractionService:
 
             return await self._extract_with_ai(text_content)
         except Exception as e:
-            if not self.client:
-                # Fallback: try to extract with regex patterns
-                return self._extract_from_text_with_regex(text_content)
-            raise ValueError(f"Failed to extract from PDF: {str(e)}")
+            logger.error(f"PDF extraction failed, falling back to regex: {str(e)}")
+            return self._extract_from_text_with_regex(text_content)
 
     async def _extract_from_docx(self, file_content: bytes) -> List[CustomerRecord]:
         """Extract data from DOCX files using AI"""
+        text_content = ""
         try:
             doc = Document(io.BytesIO(file_content))
-            text_content = ""
 
             for paragraph in doc.paragraphs:
                 text_content += paragraph.text + "\n"
@@ -121,10 +119,8 @@ class DataExtractionService:
 
             return await self._extract_with_ai(text_content)
         except Exception as e:
-            if not self.client:
-                # Fallback: try to extract with regex patterns
-                return self._extract_from_text_with_regex(text_content)
-            raise ValueError(f"Failed to extract from DOCX: {str(e)}")
+            logger.error(f"DOCX extraction failed, falling back to regex: {str(e)}")
+            return self._extract_from_text_with_regex(text_content)
 
     async def _extract_with_ai(self, text_content: str) -> List[CustomerRecord]:
         """
@@ -170,23 +166,20 @@ class DataExtractionService:
 
     def _extract_from_text_with_regex(self, text_content: str) -> List[CustomerRecord]:
         """
-        Fallback method: Extract data using regex patterns
-        This is less accurate but works without AI
+        Plan B: fall back to regex when no AI; grab emails first
         """
         import re
         from datetime import datetime
 
         customers = []
 
-        # Simple pattern matching (this is basic and should be improved)
-        # Look for email patterns as anchors
+        # Manual approach: catch emails first, then look back for a name
         email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
         emails = re.findall(email_pattern, text_content)
 
         for email in emails:
             try:
-                # Try to find nearby text that might be the name
-                # This is a very basic implementation
+                # Lần tìm đoạn tên ngay trước email trên cùng một dòng
                 lines = text_content.split('\n')
                 name = "Unknown"  # Default name
 
